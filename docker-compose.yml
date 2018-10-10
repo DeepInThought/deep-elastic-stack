@@ -1,0 +1,107 @@
+version: '3.7'
+
+services:
+
+  elasticsearch:
+    build:
+      context: elasticsearch/
+      args:
+        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.3}
+    container_name: deep-elasticsearch
+    volumes:
+      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+      - /containers:/usr/share/elasticsearch/data
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+    ulimits:
+      nproc: 65535
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512m
+        reservations:
+          cpus: '0.25'
+          memory: 512m
+    hostname: deep-elasticsearch
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    networks:
+      deep-elastic-stack:
+        aliases:
+          - elasticsearch    
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: curl -s 'http://localhost:9200/' || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  logstash:
+    build:
+      context: logstash/
+      args:
+        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.3}
+    container_name: deep-logstash
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1    
+    hostname: deep-logstash
+    networks: ['deep-elastic-stack']
+    ports:
+      - "5000:5000"
+      - "9600:9600"    
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: curl -s 'http://localhost:9600/_node/pipelines/main?pretty' || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+  kibana:
+    build:
+      context: kibana/
+      args:
+        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.3}
+    container_name: deep-kibana
+    volumes:
+      - ./kibana/config/:/usr/share/kibana/config:ro
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
+    hostname: deep-kibana
+    networks: ['deep-elastic-stack']
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    healthcheck:
+      test: curl -s 'http://localhost:5601/api/status' || exit 1
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
+secrets:
+   elastic_stack_secret:
+     file: elastic_stack_secret.txt
+
+networks:
+  deep-elastic-stack:
+    driver: bridge
