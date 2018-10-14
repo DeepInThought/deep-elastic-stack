@@ -1,0 +1,8 @@
+### jvm.options for configuring Logstash JVM settings
+### The minimum heap size (Xms) and maximum heap size (Xmx) should be equal to each other. 
+### TODO: https://github.com/helm/charts/blob/master/incubator/elasticsearch/templates/client-deployment.yaml
+
+### Xms (minimum heap size) 
+-Xms256m
+### Xmx (maximum heap size) 
+-Xmx256m

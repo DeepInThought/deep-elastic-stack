@@ -1,0 +1,13 @@
+### jvm.options for configuring Elasticsearch JVM settings
+### The minimum heap size (Xms) and maximum heap size (Xmx) should be equal to each other. 
+### TODO: https://github.com/helm/charts/blob/master/incubator/elasticsearch/templates/client-deployment.yaml
+
+### Xms (minimum heap size) 
+-Xms512m
+### Xmx (maximum heap size) 
+-Xmx512m
+
+-Djava.io.tmpdir=$HOME
+
+### Script: returning default values for missing document values is deprecated. To make behaviour compatible with future major versions.
+-Des.scripting.exception_for_missing_value=true

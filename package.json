@@ -1,0 +1,41 @@
+{
+  "scripts": {
+    "commit": "git-cz",
+    "prerelease": "git checkout master && git pull origin master",
+    "version": "conventional-changelog --present eslint --infile CHANGELOG.md --same-file -release 0 && git add CHANGELOG.md",
+    "postversion": "git push && git push --tags && rm -rf build/temp"
+  },
+  "devDependencies": {},
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "name": "deep-elastic-stack",
+  "description": "DeepIT Commit Workflow",
+  "version": "0.1.0",
+  "main": "",
+  "dependencies": {
+    "commitizen": "^3.0.2",
+    "cz-conventional-changelog": "^2.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DeepInThought/deep-elastic-stack.git"
+  },
+  "keywords": [
+    "elastic-stack",
+    "elk",
+    "deepIT",
+    "monitoring",
+    "RMM"
+  ],
+  "author": "Luke Penrod",
+  "publisher": "DeepInThought",
+  "license": "MIT",
+  "email": "support@deepinthought.io",
+  "bugs": {
+    "url": "https://github.com/DeepInThought/deep-elastic-stack/issues"
+  },
+  "homepage": "https://github.com/DeepInThought/deep-elastic-stack#readme"
+}
