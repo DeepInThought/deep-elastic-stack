@@ -6,13 +6,17 @@ services:
     build:
       context: elasticsearch/
       args:
-        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.3}
+        BUILD_NUMBER: ${BUILD_NUMBER:-0.0.1}
+        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.2}
     container_name: deep-elasticsearch
+    environment: 
+      DEEP_ELASTIC_STACK_VERSION: ${DEEP_ELASTIC_STACK_VERSION:-latest}
+      ELASTIC_PASSWORD: /run/secrets/elastic_stack_secret
+      processors: 1
+    secrets:
+      - source: elastic_stack_secret
     volumes:
-      - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
-      - /containers:/usr/share/elasticsearch/data
-    environment:
-      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      - esdata:/usr/share/elasticsearch/data
     ulimits:
       nproc: 65535
       memlock:
@@ -25,10 +29,10 @@ services:
       resources:
         limits:
           cpus: '0.50'
-          memory: 512m
+          memory: ${ELASTICSEARCH_MAX_MEMORY:-1g}
         reservations:
           cpus: '0.25'
-          memory: 512m
+          memory: ${ELASTICSEARCH_MAX_MEMORY:-1g}
     hostname: deep-elasticsearch
     dns:
       - 1.1.1.1
@@ -43,7 +47,7 @@ services:
     cap_add:
       - IPC_LOCK
     healthcheck:
-      test: curl -s 'http://localhost:9200/' || exit 1
+      test: curl -s 'http://localhost:9200/_cat/health' || exit 1
       interval: 10s
       timeout: 10s
       retries: 10
@@ -52,13 +56,20 @@ services:
     build:
       context: logstash/
       args:
-        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.3}
+        BUILD_NUMBER: ${BUILD_NUMBER:-0.0.1}
+        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.2}
     container_name: deep-logstash
+    environment: 
+      DEEP_ELASTIC_STACK_VERSION: ${DEEP_ELASTIC_STACK_VERSION:-latest}
+      ELASTIC_PASSWORD: /run/secrets/elastic_stack_secret
+      TAKE_FILE_OWNERSHIP: "true"
+    secrets:
+      - source: elastic_stack_secret
     volumes:
-      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
-      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
-    environment:
-      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+      # - ./logstash/config:/usr/share/logstash/config:ro
+      # - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - lsdata:/usr/share/logstash/data
+      - lsbin:/usr/share/logstash/bin
     dns:
       - 1.1.1.1
       - 1.0.0.1    
@@ -69,6 +80,14 @@ services:
       - "9600:9600"    
     depends_on:
       - elasticsearch
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: ${LOGSTASH_MAX_MEMORY:-1g}
+        reservations:
+          cpus: '0.25'
+          memory: ${LOGSTASH_MAX_MEMORY:-1g}
     healthcheck:
       test: curl -s 'http://localhost:9600/_node/pipelines/main?pretty' || exit 1
       interval: 10s
@@ -79,10 +98,19 @@ services:
     build:
       context: kibana/
       args:
-        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.3}
+        BUILD_NUMBER: ${BUILD_NUMBER:-0.0.1}
+        DEEP_ELASTIC_STACK_VERSION: ${DEEP_ELASTIC_STACK_VERSION:-latest}
+        ELASTIC_STACK_VERSION: ${ELASTIC_STACK_VERSION:-6.4.2}
     container_name: deep-kibana
+    environment: 
+      DEEP_ELASTIC_STACK_VERSION: ${DEEP_ELASTIC_STACK_VERSION:-latest}
+      ELASTIC_PASSWORD: /run/secrets/elastic_stack_secret
+      TAKE_FILE_OWNERSHIP: "true"
+    secrets:
+      - source: elastic_stack_secret
     volumes:
-      - ./kibana/config/:/usr/share/kibana/config:ro
+      # - ./kibana/config/:/usr/share/kibana/config:ro
+      - kdata:/usr/share/kibana/data
     dns:
       - 1.1.1.1
       - 1.0.0.1
@@ -100,8 +128,21 @@ services:
 
 secrets:
    elastic_stack_secret:
-     file: elastic_stack_secret.txt
+     file: ./elastic-stack-secrets.yml
 
 networks:
   deep-elastic-stack:
     driver: bridge
+    name: deep-elastic-stack-net
+
+volumes:
+  esdata:
+    driver: local
+  esconfig:
+    driver: local
+  lsdata:
+    driver: local
+  lsbin:
+    driver: local
+  kdata:
+    driver: local

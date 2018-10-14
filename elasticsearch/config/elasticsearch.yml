@@ -3,7 +3,7 @@
 ## from https://github.com/elastic/elasticsearch-docker/blob/master/build/elasticsearch/elasticsearch.yml
 #
 cluster.name: "deep-elastic-stack-cluster"
-node.name: "deep-elastic-stack-0"
+node.name: ${HOSTNAME}
 network.host: 0.0.0.0
 
 # minimum_master_nodes need to be explicitly set when bound on a public IP
@@ -16,11 +16,16 @@ discovery.zen.minimum_master_nodes: 1
 #
 discovery.type: single-node
 
-elastic.password: ${ES_PASSWORD}
+elasticsearch.password: ${ELASTIC_PASSWORD}
 
 # See https://www.elastic.co/guide/en/elasticsearch/reference/current/setup-configuration-memory.html#bootstrap-memory_lock
+# TODO: Add health check for bootstrap.memory_lock via 'curl -X GET "localhost:9200/_nodes?filter_path=**.mlockall"'
 bootstrap.memory_lock: true
 
-path.logs: /var/log/elasticsearch
-path.data: /var/lib/elasticsearch
-vm.max_map_count: 62144
+vm.max_map_count: 262144
+
+### TODO: Reasearch path.logs and path.data best practice for production.
+# path.logs: /var/log/elasticsearch
+# path.data: /var/lib/elasticsearch
+#? Appears not to work path.conf: /usr/share/elasticsearch/config
+
